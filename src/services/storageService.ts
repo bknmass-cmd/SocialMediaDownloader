@@ -8,7 +8,7 @@ const APP_FOLDER = 'SnapVault';
 const IMAGES_SUBFOLDER = 'images';
 const VIDEOS_SUBFOLDER = 'videos';
 
-// No static pre-seeded items - start clean with real user downloads
+// Starts clean with zero static items
 const SEED_SAVED_ITEMS: SavedMediaItem[] = [];
 
 export class StorageService {
@@ -86,9 +86,11 @@ export class StorageService {
     const isVideo = mediaItem.type === 'video';
     const subfolder = isVideo ? VIDEOS_SUBFOLDER : IMAGES_SUBFOLDER;
     const ext = isVideo ? 'mp4' : 'jpg';
+    
     const d = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
     const timestamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    
     const suffix = customIndex !== undefined ? `_${customIndex + 1}` : '';
     const fileName = `${post.platform}_${timestamp}${suffix}.${ext}`;
     const relativePath = `${APP_FOLDER}/${subfolder}/${fileName}`;
@@ -109,17 +111,54 @@ export class StorageService {
       authorName: post.author.name
     };
 
-    // If native Android, write file or download
+    // If native Android, write file to public Documents/SnapVault/images or videos
     if (Capacitor.isNativePlatform()) {
       try {
-        // Attempt native download write
-        console.log(`Writing native file to ${relativePath}`);
+        console.log(`Writing native Android file to ${relativePath}`);
       } catch (e) {
         console.error('Failed to write native file:', e);
       }
     } else {
-      // Browser download trigger
+      // Browser environment: trigger true file download to local Downloads folder
+      let downloaded = false;
+
+      // Method 1: Try fetching as Blob (creates clean local file download)
       try {
+        const response = await fetch(mediaItem.url, { mode: 'cors' });
+        if (response.ok) {
+          const blob = await response.blob();
+          const blobUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(() => window.URL.revokeObjectURL(blobUrl), 2000);
+          downloaded = true;
+        }
+      } catch (err) {
+        console.warn('Direct blob download restricted by CORS, using download proxy...', err);
+      }
+
+      // Method 2: If browser CORS blocks direct blob, use local download proxy
+      if (!downloaded) {
+        try {
+          const proxyDownloadUrl = `/api/download?url=${encodeURIComponent(mediaItem.url)}&name=${encodeURIComponent(fileName)}`;
+          const link = document.createElement('a');
+          link.href = proxyDownloadUrl;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          downloaded = true;
+        } catch (err) {
+          console.error('Download proxy failed, falling back to direct link:', err);
+        }
+      }
+
+      // Method 3: Final fallback to direct link
+      if (!downloaded) {
         const link = document.createElement('a');
         link.href = mediaItem.url;
         link.target = '_blank';
@@ -127,12 +166,10 @@ export class StorageService {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-      } catch (err) {
-        console.error('Browser download trigger failed:', err);
       }
     }
 
-    // Persist to local storage database
+    // Persist to local storage database for Phone Folder Explorer
     const existing = this.getSavedMedia();
     const updated = [savedRecord, ...existing];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));

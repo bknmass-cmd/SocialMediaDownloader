@@ -139,6 +139,7 @@ export const VideoPlayerWithAudioControl: React.FC<VideoPlayerProps> = ({
           poster={mediaItem.previewUrl}
           playsInline
           loop
+          crossOrigin="anonymous"
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleTimeUpdate}
           onClick={togglePlay}

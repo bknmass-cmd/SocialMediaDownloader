@@ -121,6 +121,7 @@ export const MultiImageSelector: React.FC<MultiImageSelectorProps> = ({
               <img
                 src={item.previewUrl || item.url}
                 alt={`Slide ${index + 1}`}
+                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 loading="lazy"
               />
@@ -209,6 +210,7 @@ export const MultiImageSelector: React.FC<MultiImageSelectorProps> = ({
             <img
               src={images[activeZoomIndex].url}
               alt="Zoomed preview"
+              referrerPolicy="no-referrer"
               className="max-h-[75vh] w-auto object-contain rounded-2xl shadow-2xl"
             />
             <div className="mt-3 flex items-center gap-3">

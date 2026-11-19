@@ -24,13 +24,23 @@ export const UrlInputSection: React.FC<UrlInputSectionProps> = ({
   const handlePaste = async () => {
     try {
       const text = await navigator.clipboard.readText();
-      if (text) {
-        setUrl(text);
-        onFetch(text);
+      if (text && text.trim()) {
+        const clean = text.trim();
+        setUrl(clean);
+        onFetch(clean);
       }
     } catch {
       const input = document.getElementById('url-input') as HTMLInputElement;
       if (input) input.focus();
+    }
+  };
+
+  const handleInputPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData.getData('text');
+    if (pastedText && pastedText.trim()) {
+      const clean = pastedText.trim();
+      setUrl(clean);
+      onFetch(clean);
     }
   };
 
@@ -110,6 +120,7 @@ export const UrlInputSection: React.FC<UrlInputSectionProps> = ({
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
+                onPaste={handleInputPaste}
                 onKeyDown={handleKeyDown}
                 placeholder="Paste Instagram, Twitter/X, Threads link (or direct image/video URL)..."
                 className="w-full bg-transparent pl-3 pr-8 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none font-medium"

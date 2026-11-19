@@ -191,6 +191,7 @@ export const PhoneFolderExplorer: React.FC<PhoneFolderExplorerProps> = ({
                   <img
                     src={item.thumbnailUrl}
                     alt={item.fileName}
+                    referrerPolicy="no-referrer"
                     className="w-full h-full object-cover"
                   />
                   {isVideo && (
@@ -277,6 +278,7 @@ export const PhoneFolderExplorer: React.FC<PhoneFolderExplorerProps> = ({
                 <img
                   src={previewItem.url}
                   alt={previewItem.fileName}
+                  referrerPolicy="no-referrer"
                   className="max-h-[55vh] w-auto object-contain"
                 />
               )}
