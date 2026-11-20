@@ -13,7 +13,7 @@ function dynamicExtractorPlugin(): Plugin {
           try {
             const parsed = new URL(reqUrl, 'http://localhost:5173');
             const fileUrl = parsed.searchParams.get('url');
-            const fileName = parsed.searchParams.get('name') || 'media_file';
+            const fileName = parsed.searchParams.get('name') || 'download_media';
 
             if (!fileUrl) {
               res.statusCode = 400;
@@ -61,15 +61,15 @@ function dynamicExtractorPlugin(): Plugin {
               return;
             }
 
-            console.log(`[API /api/extract] Extracting dynamic URL: ${targetUrl}`);
+            console.log(`[API /api/extract] Extracting: ${targetUrl}`);
 
-            // A. Multi-URL input check (separated by comma, space, or newline)
+            // Multi-URL check
             const subUrls = targetUrl.split(/[\s,]+/).filter(u => /^https?:\/\//i.test(u));
             if (subUrls.length > 1) {
-              const mediaList = subUrls.map((u, idx) => {
+              const items = subUrls.map((u, idx) => {
                 const isVid = /\.(mp4|webm|mov|mkv)(\?.*)?$/i.test(u) || /video|reel|clip/i.test(u);
                 return {
-                  id: `dynamic-item-${idx}-${Date.now()}`,
+                  id: `item-${idx}-${Date.now()}`,
                   type: isVid ? 'video' : 'image',
                   url: u,
                   previewUrl: u,
@@ -81,25 +81,25 @@ function dynamicExtractorPlugin(): Plugin {
               res.setHeader('Content-Type', 'application/json');
               res.setHeader('Access-Control-Allow-Origin', '*');
               res.end(JSON.stringify({
-                id: `multi-dynamic-${Date.now()}`,
-                platform: 'generic',
+                id: `batch-${Date.now()}`,
+                platform: 'direct',
+                title: `${items.length} Files`,
                 author: {
-                  name: 'Multi-URL Media Set',
-                  handle: `${mediaList.length} files`,
+                  name: 'Multi-URL Selection',
+                  handle: `${items.length} items`,
                   avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80',
                   verified: true
                 },
-                caption: `Extracted ${mediaList.length} dynamic media files.`,
-                timestamp: new Date().toLocaleTimeString(),
+                caption: `Extracted ${items.length} dynamic media files.`,
                 originalUrl: targetUrl,
-                isMultiImage: mediaList.filter(m => m.type === 'image').length > 1,
-                hasVideo: mediaList.some(m => m.type === 'video'),
-                media: mediaList
+                isMultiImage: items.filter(it => it.type === 'image').length > 1,
+                hasVideo: items.some(it => it.type === 'video'),
+                items
               }));
               return;
             }
 
-            // B. Direct Video file check (.mp4, .mov, etc.)
+            // Direct Video check
             if (/\.(mp4|webm|mov|mkv)(\?.*)?$/i.test(targetUrl)) {
               let domain = 'Direct Source';
               try { domain = new URL(targetUrl).hostname; } catch {}
@@ -108,20 +108,20 @@ function dynamicExtractorPlugin(): Plugin {
               res.setHeader('Content-Type', 'application/json');
               res.setHeader('Access-Control-Allow-Origin', '*');
               res.end(JSON.stringify({
-                id: `direct-vid-${Date.now()}`,
-                platform: 'generic',
+                id: `vid-${Date.now()}`,
+                platform: 'direct',
+                title: `${domain} Video`,
                 author: {
-                  name: `${domain} Stream`,
+                  name: domain,
                   handle: domain,
                   avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80',
                   verified: true
                 },
                 caption: `Dynamic video file: ${targetUrl}`,
-                timestamp: 'Real-time Stream',
                 originalUrl: targetUrl,
                 isMultiImage: false,
                 hasVideo: true,
-                media: [{
+                items: [{
                   id: `vid-${Date.now()}`,
                   type: 'video',
                   url: targetUrl,
@@ -133,7 +133,7 @@ function dynamicExtractorPlugin(): Plugin {
               return;
             }
 
-            // C. Direct Image file check (.jpg, .png, etc.)
+            // Direct Image check
             if (/\.(jpg|jpeg|png|webp|gif|svg|avif)(\?.*)?$/i.test(targetUrl)) {
               let domain = 'Direct Source';
               try { domain = new URL(targetUrl).hostname; } catch {}
@@ -142,20 +142,20 @@ function dynamicExtractorPlugin(): Plugin {
               res.setHeader('Content-Type', 'application/json');
               res.setHeader('Access-Control-Allow-Origin', '*');
               res.end(JSON.stringify({
-                id: `direct-img-${Date.now()}`,
-                platform: 'generic',
+                id: `img-${Date.now()}`,
+                platform: 'direct',
+                title: `${domain} Image`,
                 author: {
-                  name: `${domain} Photo`,
+                  name: domain,
                   handle: domain,
                   avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80',
                   verified: true
                 },
                 caption: `Dynamic image file: ${targetUrl}`,
-                timestamp: 'Real-time Photo',
                 originalUrl: targetUrl,
                 isMultiImage: false,
                 hasVideo: false,
-                media: [{
+                items: [{
                   id: `img-${Date.now()}`,
                   type: 'image',
                   url: targetUrl,
@@ -165,7 +165,7 @@ function dynamicExtractorPlugin(): Plugin {
               return;
             }
 
-            // D. Twitter / X Extraction
+            // Twitter / X extraction via fxtwitter
             if (/twitter\.com|x\.com/i.test(targetUrl)) {
               const match = targetUrl.match(/(?:twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)/i);
               if (match) {
@@ -179,11 +179,11 @@ function dynamicExtractorPlugin(): Plugin {
                     const data = await fxRes.json();
                     if (data.tweet) {
                       const tweet = data.tweet;
-                      const mediaList: any[] = [];
+                      const items: any[] = [];
 
                       if (tweet.media?.photos) {
                         tweet.media.photos.forEach((p: any, idx: number) => {
-                          mediaList.push({
+                          items.push({
                             id: `tw-photo-${idx}-${Date.now()}`,
                             type: 'image',
                             url: p.url,
@@ -196,7 +196,7 @@ function dynamicExtractorPlugin(): Plugin {
 
                       if (tweet.media?.videos) {
                         tweet.media.videos.forEach((v: any, idx: number) => {
-                          mediaList.push({
+                          items.push({
                             id: `tw-vid-${idx}-${Date.now()}`,
                             type: 'video',
                             url: v.url,
@@ -207,91 +207,37 @@ function dynamicExtractorPlugin(): Plugin {
                         });
                       }
 
-                      if (mediaList.length > 0) {
+                      if (items.length > 0) {
                         res.statusCode = 200;
                         res.setHeader('Content-Type', 'application/json');
                         res.setHeader('Access-Control-Allow-Origin', '*');
                         res.end(JSON.stringify({
                           id: `tw-${statusId}`,
                           platform: 'twitter',
+                          title: `${tweet.author?.name || user}'s Tweet`,
                           author: {
                             name: tweet.author?.name || user,
                             handle: tweet.author?.screen_name || user,
                             avatar: tweet.author?.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_400x400.png',
                             verified: !!tweet.author?.is_blue_verified
                           },
-                          caption: tweet.text || 'Twitter / X Media',
-                          timestamp: tweet.created_at || 'Recent',
+                          caption: tweet.text || '',
                           originalUrl: targetUrl,
-                          isMultiImage: mediaList.filter(m => m.type === 'image').length > 1,
-                          hasVideo: mediaList.some(m => m.type === 'video'),
-                          media: mediaList
+                          isMultiImage: items.filter(it => it.type === 'image').length > 1,
+                          hasVideo: items.some(it => it.type === 'video'),
+                          items
                         }));
                         return;
                       }
                     }
                   }
                 } catch (e: any) {
-                  console.warn('[Twitter fetch error]', e.message);
+                  console.warn('[Twitter fetch fallback]', e.message);
                 }
               }
             }
 
-            // E. Instagram Extraction
-            if (/instagram\.com|instagr\.am/i.test(targetUrl)) {
-              const shortcodeMatch = targetUrl.match(/(?:p|reel|tv)\/([^/?#&]+)/i);
-              const shortcode = shortcodeMatch ? shortcodeMatch[1] : '';
-
-              // Try public embed endpoint
-              if (shortcode) {
-                try {
-                  const embedRes = await fetch(`https://www.instagram.com/p/${shortcode}/embed/captioned/`, {
-                    headers: {
-                      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                    }
-                  });
-                  const embedHtml = await embedRes.text();
-                  const imgMatch = embedHtml.match(/class="EmbeddedMediaImage"[^>]*src="([^"]+)"/i);
-                  const captionMatch = embedHtml.match(/class="Caption"[^>]*>([\s\S]*?)<\/div>/i);
-                  const usernameMatch = embedHtml.match(/class="UsernameText"[^>]*>([^<]+)</i);
-
-                  if (imgMatch && imgMatch[1]) {
-                    const imgUrl = imgMatch[1].replace(/&amp;/g, '&');
-                    const isReel = /reel|tv/i.test(targetUrl);
-                    res.statusCode = 200;
-                    res.setHeader('Content-Type', 'application/json');
-                    res.setHeader('Access-Control-Allow-Origin', '*');
-                    res.end(JSON.stringify({
-                      id: `insta-${shortcode}`,
-                      platform: 'instagram',
-                      author: {
-                        name: usernameMatch ? usernameMatch[1].trim() : 'Instagram User',
-                        handle: usernameMatch ? usernameMatch[1].trim() : 'instagram',
-                        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
-                        verified: true
-                      },
-                      caption: captionMatch ? captionMatch[1].replace(/<[^>]+>/g, '').trim() : `Instagram ${isReel ? 'Reel' : 'Post'}`,
-                      timestamp: 'Live Post',
-                      originalUrl: targetUrl,
-                      isMultiImage: false,
-                      hasVideo: isReel,
-                      media: [{
-                        id: `insta-media-${shortcode}`,
-                        type: isReel ? 'video' : 'image',
-                        url: imgUrl,
-                        previewUrl: imgUrl,
-                        hasAudio: isReel
-                      }]
-                    }));
-                    return;
-                  }
-                } catch (e: any) {
-                  console.warn('[Insta embed error]', e.message);
-                }
-              }
-            }
-
-            // F. OpenGraph Web Crawling Fallback
+            // OpenGraph Web Crawling Fallback (Instagram, Threads, etc.)
             try {
               const pageRes = await fetch(targetUrl, {
                 headers: {
@@ -306,11 +252,11 @@ function dynamicExtractorPlugin(): Plugin {
               const titleMatch = html.match(/<meta\s+(?:property|name)=["'](?:og:title|twitter:title)["']\s+content=["']([^"']+)["']/i);
               const descMatch = html.match(/<meta\s+(?:property|name)=["'](?:og:description|twitter:description)["']\s+content=["']([^"']+)["']/i);
 
-              const mediaList: any[] = [];
+              const items: any[] = [];
 
               ogVideos.forEach((vUrl, idx) => {
-                if (!mediaList.some(m => m.url === vUrl)) {
-                  mediaList.push({
+                if (!items.some(m => m.url === vUrl)) {
+                  items.push({
                     id: `og-vid-${idx}-${Date.now()}`,
                     type: 'video',
                     url: vUrl,
@@ -321,8 +267,8 @@ function dynamicExtractorPlugin(): Plugin {
               });
 
               ogImages.forEach((imgUrl, idx) => {
-                if (!imgUrl.includes('default-og') && !imgUrl.includes('favicon') && !mediaList.some(m => m.url === imgUrl)) {
-                  mediaList.push({
+                if (!imgUrl.includes('default-og') && !imgUrl.includes('favicon') && !items.some(m => m.url === imgUrl)) {
+                  items.push({
                     id: `og-img-${idx}-${Date.now()}`,
                     type: 'image',
                     url: imgUrl,
@@ -334,27 +280,27 @@ function dynamicExtractorPlugin(): Plugin {
               const cleanPlatform = /instagram\.com|instagr\.am/i.test(targetUrl) ? 'instagram'
                 : /twitter\.com|x\.com/i.test(targetUrl) ? 'twitter'
                 : /threads\.net/i.test(targetUrl) ? 'threads'
-                : 'generic';
+                : 'direct';
 
-              if (mediaList.length > 0) {
+              if (items.length > 0) {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
                 res.setHeader('Access-Control-Allow-Origin', '*');
                 res.end(JSON.stringify({
                   id: `extracted-${Date.now()}`,
                   platform: cleanPlatform,
+                  title: titleMatch ? titleMatch[1].split('•')[0].trim() : `${cleanPlatform.toUpperCase()} Media`,
                   author: {
                     name: titleMatch ? titleMatch[1].split('•')[0].trim() : `${cleanPlatform.toUpperCase()} User`,
                     handle: new URL(targetUrl).pathname.split('/')[1] || cleanPlatform,
                     avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
                     verified: false
                   },
-                  caption: descMatch ? descMatch[1] : (titleMatch ? titleMatch[1] : `Extracted media from ${targetUrl}`),
-                  timestamp: 'Live Post',
+                  caption: descMatch ? descMatch[1] : (titleMatch ? titleMatch[1] : `Media from ${targetUrl}`),
                   originalUrl: targetUrl,
-                  isMultiImage: mediaList.filter(m => m.type === 'image').length > 1,
-                  hasVideo: mediaList.some(m => m.type === 'video'),
-                  media: mediaList
+                  isMultiImage: items.filter(it => it.type === 'image').length > 1,
+                  hasVideo: items.some(it => it.type === 'video'),
+                  items
                 }));
                 return;
               }
@@ -362,7 +308,7 @@ function dynamicExtractorPlugin(): Plugin {
               console.warn('[Crawl error]', crawlErr);
             }
 
-            // G. Universal Dynamic Media Object Fallback
+            // Universal Dynamic fallback
             const isVid = /video|reel|clip|watch|tv/i.test(targetUrl);
             let domainName = 'social';
             try { domainName = new URL(targetUrl).hostname.replace('www.', ''); } catch {}
@@ -372,33 +318,32 @@ function dynamicExtractorPlugin(): Plugin {
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.end(JSON.stringify({
               id: `dyn-${Date.now()}`,
-              platform: /instagram/i.test(targetUrl) ? 'instagram' : /twitter|x\.com/i.test(targetUrl) ? 'twitter' : /threads/i.test(targetUrl) ? 'threads' : 'generic',
+              platform: /instagram/i.test(targetUrl) ? 'instagram' : /twitter|x\.com/i.test(targetUrl) ? 'twitter' : /threads/i.test(targetUrl) ? 'threads' : 'direct',
+              title: `@${domainName}`,
               author: {
                 name: `@${domainName}`,
                 handle: domainName,
                 avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
-                verified: true
+                verified: false
               },
-              caption: `Dynamic media from: ${targetUrl}`,
-              timestamp: new Date().toLocaleTimeString(),
+              caption: `Media link: ${targetUrl}`,
               originalUrl: targetUrl,
               isMultiImage: false,
               hasVideo: isVid,
-              media: [{
-                id: `dyn-media-1`,
+              items: [{
+                id: `dyn-item-1`,
                 type: isVid ? 'video' : 'image',
                 url: targetUrl,
                 previewUrl: targetUrl,
                 hasAudio: true
               }]
             }));
-            return;
           } catch (err: any) {
             res.statusCode = 500;
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({ error: err.message || 'Server extraction error' }));
-            return;
           }
+          return;
         }
 
         next();
