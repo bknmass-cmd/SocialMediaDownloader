@@ -202,3 +202,21 @@ async def download_media(
             )
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to generate mute video: {str(e)}")
+
+# Serve Angular frontend SPA static assets if built/present
+static_dirs = [
+    Path(__file__).resolve().parent.parent / "static",
+    Path(__file__).resolve().parent.parent.parent / "frontend" / "dist" / "frontend" / "browser"
+]
+
+for s_dir in static_dirs:
+    if s_dir.exists() and (s_dir / "index.html").exists():
+        @app.get("/{full_path:path}")
+        def serve_frontend_spa(full_path: str):
+            if full_path.startswith("api/") or full_path in ("health", "docs", "openapi.json"):
+                raise HTTPException(status_code=404, detail="Not Found")
+            file_candidate = s_dir / full_path
+            if file_candidate.is_file():
+                return FileResponse(str(file_candidate))
+            return FileResponse(str(s_dir / "index.html"))
+        break
