@@ -9,6 +9,8 @@ jobs:
   build-apk:
     name: Build SocialSaver APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout Code
@@ -57,9 +59,25 @@ jobs:
           name: gradle-build-log
           path: frontend/android/gradle-build.log
 
+      - name: Locate and Copy APK
+        run: |
+          mkdir -p release-apk
+          find . -name "*.apk" -exec cp {} release-apk/SocialSaver-debug.apk \;
+          echo "Found APK files:"
+          ls -lh release-apk/
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: SocialSaver-APK
-          path: frontend/android/app/build/outputs/apk/debug/*.apk
-          if-no-files-found: ignore
+          path: release-apk/SocialSaver-debug.apk
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          name: SocialSaver Android APK v1.0.0
+          files: release-apk/SocialSaver-debug.apk
+          token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
