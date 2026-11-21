@@ -49,6 +49,7 @@ def remove_temp_file(path: str):
         print(f"Error removing temp file {path}: {e}")
 
 @app.get("/health")
+@app.get("/api/health")
 def health_check():
     return {"status": "ok", "app": "SocialSaver", "ffmpeg": bool(get_ffmpeg_path())}
 
