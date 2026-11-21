@@ -1,79 +1,106 @@
-# 📸 SnapVault - Social Media Media Saver PRO
-
-> **All-in-one Media Saver for Android (Instagram, Twitter / X, & Threads)**
-
-SnapVault is an ultra-fast, modern Android mobile application designed to extract and save media from the top 3 social media platforms:
-1. **Instagram** (Posts, Reels, Carousel / Multi-Images)
-2. **Twitter / X** (Photos, Multi-photo sets, Videos & Clips)
-3. **Threads** (Carousels & Video Posts)
+# SocialSaver 🚀
+> Complete, production-grade social media downloader solution for **Instagram**, **YouTube & Shorts**, **Threads**, and **X (Twitter)**. Built with **Python (FastAPI)** + **Angular 22** + **Capacitor 8** for Android.
 
 ---
 
-## ✨ Features
+## 📱 Features
 
-- 📱 **Attractive Mobile UI**: Built with a sleek dark aesthetic, gradient highlights for each platform, interactive tabs, and mobile-friendly touch targets.
-- 🖼️ **Multi-Image Support**:
-  - Paste any carousel / multi-image post.
-  - Preview all photos in a responsive grid.
-  - Select individual photo(s) using custom checkboxes, or tap **"Select All"** / **"Deselect All"**.
-  - Download only the selected photos or all photos with one tap.
-- 🎥 **Video Player with Audio Controls**:
-  - Direct video preview playback with seek bar and duration.
-  - Dedicated buttons: **"With Music / Sound" (Unmute)** and **"Mute Video"** with real-time audio wave animation.
-  - Download high-definition MP4 videos directly.
-- 📁 **Automatic Phone Storage Folder Organization**:
-  - Automatically creates and manages storage folders on your Android device:
-    - `SnapVault/` (Main App Folder)
-      - `SnapVault/images/` (Saved Photos)
-      - `SnapVault/videos/` (Saved MP4 Videos)
-  - In-app **Folder Explorer tab** lets you browse, preview, and delete saved files.
-- ⚡ **1-Click Quick Demo Links**: Built-in test samples for Instagram, Twitter / X, and Threads so you can test all features instantly.
+1. **Multi-Platform URL Extraction (`POST /api/extract`):**
+   - Extracts metadata, single photos, high-res carousel posts, and video streams with thumbnails and durations.
+   - Built with `yt-dlp` and `ffmpeg`.
+   - Supports Instagram (Posts, Reels, Carousels), YouTube (Videos & Shorts), Threads, and X (Twitter).
+
+2. **Custom Media Streaming & Transformation (`GET /api/download`):**
+   - **High-Res Images:** Proxied streaming directly through backend to avoid CORS restrictions.
+   - **Video with Audio:** Merges best video and best audio streams into MP4 and cleans up temporary files after delivery.
+   - **Muted Video (No Audio):** Generates clean audio-free MP4 via FFmpeg stream stripping (`-c copy -an`).
+
+3. **Angular 22 Mobile-First Frontend:**
+   - Standalone components and Angular Signals (`signal`, `computed`).
+   - Tailwind CSS dark-themed mobile UI.
+   - One-tap paste from Android clipboard via `@capacitor/clipboard`.
+   - Responsive 2-column image carousel selection grid with "Select All", "Deselect All", "Download Selected (X)", and "Download All".
+   - Dual video download buttons: **Download Video (With Music)** and **Download Mute Video (No Audio)**.
+   - In-app gallery tab tracking saved items, with native file sharing (`@capacitor/share`).
+
+4. **Native Android Integration:**
+   - **Automatic App Folder Creation:** Automatically creates `Pictures/SocialSaver` and `Movies/SocialSaver`.
+   - **Native Android MediaStore Bridge (`MediaStorePlugin.java`):** Automatically registers saved images and videos with the Android `MediaStore` content provider (`RELATIVE_PATH`), ensuring downloaded files immediately appear in the phone's native Gallery app.
+   - Configurable Backend IP in settings modal (`http://localhost:8000`, `http://10.0.2.2:8000`, or LAN IP).
 
 ---
 
-## 🚀 Running Locally (Live Preview)
+## 📂 Project Architecture
 
-The local server is already running! You can open:
-
-- **Local Browser**: [http://localhost:5173/](http://localhost:5173/)
-- **Mobile Device on Same Wi-Fi**: Open `http://192.168.1.3:5173/` on your phone's Chrome/browser!
-
-To restart the local dev server manually at any time:
-```bash
-npm run dev
+```
+insta/
+├── backend/                        # FastAPI Python backend
+│   ├── app/
+│   │   ├── main.py                 # FastAPI endpoints & CORS
+│   │   ├── models/schemas.py       # Pydantic validation schemas
+│   │   └── services/extractor.py   # yt-dlp metadata extraction & FFmpeg
+│   ├── requirements.txt            # Python dependencies
+│   ├── Dockerfile                  # Containerized deployment
+│   └── run.bat                     # Quick backend launcher
+│
+├── frontend/                       # Angular 22 + Capacitor 8 frontend
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── models/             # MediaItem, ExtractResponse, SavedMedia
+│   │   │   ├── services/           # ApiService, StorageService, MediaStoreService
+│   │   │   ├── app.component.ts    # Signals state & download handlers
+│   │   │   ├── app.component.html  # Mobile UI layout
+│   │   │   └── app.component.css
+│   │   └── styles.css              # Tailwind CSS styles
+│   ├── android/                    # Native Android platform
+│   │   └── app/src/main/
+│   │       ├── java/com/socialsaver/app/
+│   │       │   ├── MainActivity.java
+│   │       │   └── MediaStorePlugin.java # Native MediaStore registration
+│   │       └── AndroidManifest.xml # Permissions & cleartext traffic
+│   ├── capacitor.config.ts         # App ID: com.socialsaver.app
+│   └── package.json
+│
+├── run-all.bat                     # Starts both backend and frontend
+├── run-backend.bat                 # Starts FastAPI backend
+├── run-frontend.bat                # Starts Angular frontend
+└── build-apk.bat                   # Builds Android APK
 ```
 
 ---
 
-## 📦 How to Build the Android APK
+## ⚡ Quick Start
 
-The project is completely configured with Capacitor and the native Android scaffold in `android/`.
+### 1. Run Backend and Frontend Concurrently
+Double-click `run-all.bat` or run:
+```bat
+run-all.bat
+```
+- **Backend API:** `http://localhost:8000` (Docs: `http://localhost:8000/docs`)
+- **Frontend App:** `http://localhost:4200`
 
-### Option A: Using the 1-Click Batch Script
-Run:
-```cmd
+---
+
+## 📦 Building the Android APK
+
+1. Make sure you have **Java JDK 17+** and the **Android SDK** installed.
+2. Run the build script:
+```bat
 build-apk.bat
 ```
+This script will:
+- Run `ng build` for Angular 22
+- Sync the build into the Capacitor Android project (`npx cap sync android`)
+- Run Gradle (`gradlew.bat assembleDebug`)
+- Output `SocialSaver-debug.apk` directly to the project root directory.
 
-### Option B: Using Android Studio
-1. Open terminal and run:
-   ```cmd
-   npm run build
-   npx cap sync android
-   npx cap open android
-   ```
-2. In Android Studio, go to:
-   **Build** > **Build Bundle(s) / APK(s)** > **Build APK(s)**
-3. Your APK will be generated at:
-   `android/app/build/outputs/apk/debug/app-debug.apk`
-
-### Option C: Using GitHub Actions (Automated Cloud APK Build)
-Push this repository to GitHub. The included workflow `.github/workflows/build-apk.yml` will automatically build the APK on GitHub's cloud servers and provide a downloadable `.apk` artifact with zero local setup needed!
-
----
-
-## 📱 Installing on Your Phone
-1. Transfer `app-debug.apk` to your phone (via USB, Google Drive, WhatsApp, etc.).
-2. Tap the `.apk` file on your phone.
-3. Allow *"Install unknown apps"* if prompted.
-4. Launch **SnapVault** — it will automatically create the `SnapVault/images` and `SnapVault/videos` folders on your phone storage!
+### Alternative: Build with Android Studio
+```bash
+cd frontend
+npx cap open android
+```
+In Android Studio:
+1. Wait for Gradle sync to finish.
+2. Click **Build** > **Build Bundle(s) / APK(s)** > **Build APK(s)**.
+3. Locate the APK under `frontend/android/app/build/outputs/apk/debug/app-debug.apk`.
+4. Install on your Android phone using `adb install app-debug.apk` or transfer the file to your device.
