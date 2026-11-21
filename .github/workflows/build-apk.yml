@@ -50,7 +50,14 @@ jobs:
       - name: Build Debug APK
         working-directory: frontend/android
         run: |
-          ./gradlew :app:assembleDebug --no-daemon --stacktrace
+          if ! ./gradlew :app:assembleDebug --no-daemon --stacktrace > build.log 2>&1; then
+            echo "::error::Gradle build failed. Showing last 50 lines:"
+            tail -n 50 build.log | while IFS= read -r line; do
+              echo "::error::$line"
+            done
+            cat build.log | tail -n 80
+            exit 1
+          fi
           echo "=== SEARCHING FOR APK FILES ==="
           find . -name "*.apk"
           mkdir -p ../../dist-apk
