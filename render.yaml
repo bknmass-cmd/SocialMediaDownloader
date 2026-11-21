@@ -1,7 +1,11 @@
 services:
   - type: web
     name: socialsaver
-    env: docker
-    dockerfilePath: Dockerfile
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: free
-    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 10000
+

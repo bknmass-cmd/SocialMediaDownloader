@@ -1,7 +1,7 @@
 # ==========================================
 # Stage 1: Build Angular Frontend
 # ==========================================
-FROM node:20-alpine AS frontend-builder
+FROM node:22-slim AS frontend-builder
 
 WORKDIR /app/frontend
 
@@ -34,9 +34,9 @@ COPY backend/app/ ./app/
 # Copy built Angular frontend assets from Stage 1
 COPY --from=frontend-builder /app/frontend/dist/frontend/browser ./static/
 
-# Render automatically sets $PORT at runtime (defaults to 10000)
+ENV PYTHONUNBUFFERED=1
 ENV PORT=10000
 EXPOSE 10000
 
 # Start Uvicorn bound to 0.0.0.0 and dynamic $PORT
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
+CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}
