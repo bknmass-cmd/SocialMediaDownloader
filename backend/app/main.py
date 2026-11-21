@@ -34,15 +34,7 @@ app = FastAPI(
 # Enable CORS for Capacitor, Angular, and mobile web clients
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "capacitor://localhost",
-        "http://localhost",
-        "https://localhost",
-        "http://localhost:4200",
-        "http://localhost:8100",
-        "http://localhost:5173",
-        "*"
-    ],
+    allow_origin_regex=r"^(http://|https://|capacitor://|ionic://).*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

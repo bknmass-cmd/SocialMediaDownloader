@@ -6,6 +6,7 @@ echo   https://github.com/bknmass-cmd/SocialMediaDownloader.git
 echo ========================================================
 echo.
 
+if exist "C:\Program Files\Git\cmd" set "PATH=C:\Program Files\Git\cmd;%PATH%"
 cd /d "%~dp0"
 
 echo [1/3] Staging any remaining files...
@@ -17,9 +18,9 @@ git remote set-url origin https://github.com/bknmass-cmd/SocialMediaDownloader.g
 git remote -v
 
 echo.
-echo [3/3] Pushing to master branch...
+echo [3/3] Pushing to main branch...
 echo (If Git Credential Manager or GitHub login popup appears, please sign in)
-git push -u origin master
+git push -u origin main
 
 if %ERRORLEVEL% EQU 0 (
     echo.
