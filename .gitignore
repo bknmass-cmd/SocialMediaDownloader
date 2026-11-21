@@ -1,31 +1,44 @@
-# Node dependencies
+# Node & NPM
 node_modules/
+frontend/node_modules/
 .pnp
 .pnp.js
 
-# Production build output
+# Build Outputs
 dist/
+frontend/dist/
 dist-ssr/
+frontend/.angular/
 
-# Local env files
-*.local
-.env
-.env.*
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Android build outputs
-android/.gradle
-android/build
-android/app/build
+# Android / Gradle
+.gradle/
+frontend/android/.gradle/
+frontend/android/build/
+frontend/android/app/build/
 *.apk
 *.aab
+local.properties
+
+# Environment & Logs
+*.log
+.env
+.env.*
+*.local
+
+# OS & Editors
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

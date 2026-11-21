@@ -1,13 +1,17 @@
 @echo off
+title SocialSaver - Build Android APK
 echo ========================================================
-echo   SnapVault - Building Android APK
+echo   SocialSaver - Building Android APK
+echo   Monorepo: Angular 22 + Capacitor 8 + MediaStore
 echo ========================================================
 
+cd /d "%~dp0frontend"
+
 echo.
-echo [1/3] Compiling web production bundle...
+echo [1/3] Building Angular 22 production bundle...
 call npm.cmd run build
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERROR] Web build failed.
+    echo [ERROR] Angular build failed.
     pause
     exit /b %ERRORLEVEL%
 )
@@ -22,30 +26,35 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
-echo [3/3] Assembling Debug APK...
-if defined JAVA_HOME (
+echo [3/3] Compiling Native Android APK with Gradle...
+if exist "android\gradlew.bat" (
     cd android
     call gradlew.bat assembleDebug
     if %ERRORLEVEL% EQU 0 (
         cd ..
-        copy android\app\build\outputs\apk\debug\app-debug.apk SnapVault-debug.apk
-        echo.
-        echo ========================================================
-        echo   SUCCESS! APK built successfully:
-        echo   SnapVault-debug.apk (Root folder)
-        echo   android\app\build\outputs\apk\debug\app-debug.apk
-        echo ========================================================
+        if exist "android\app\build\outputs\apk\debug\app-debug.apk" (
+            copy "android\app\build\outputs\apk\debug\app-debug.apk" "..\SocialSaver-debug.apk" >nul
+            echo.
+            echo ========================================================
+            echo   SUCCESS! APK built successfully:
+            echo   - File: SocialSaver-debug.apk (in project root)
+            echo   - Path: frontend\android\app\build\outputs\apk\debug\app-debug.apk
+            echo ========================================================
+        )
     ) else (
-        echo [ERROR] Gradle build failed. Check Java or Android SDK settings.
+        echo.
+        echo [INFO] Gradle build requires JDK 17+ and Android SDK.
+        echo If you do not have Java in PATH:
+        echo   1. Install OpenJDK 17 or 21 (https://adoptium.net/)
+        echo   2. Set JAVA_HOME, or open the project in Android Studio:
+        echo      cd frontend ^&^& npx cap open android
+        echo   3. Click "Build" -^> "Build Bundle(s) / APK(s)" -^> "Build APK(s)"
         cd ..
     )
 ) else (
-    echo [NOTICE] JAVA_HOME is not set in this shell.
-    echo To build locally:
-    echo   1. Install Java JDK 17 (e.g. from https://adoptium.net/)
-    echo   2. Run this script again, or run 'npx cap open android' in Android Studio
-    echo      and click: Build -^> Build Bundle(s) / APK(s) -^> Build APK(s)
+    echo [ERROR] android\gradlew.bat not found. Run 'npx cap add android' first.
 )
 
+cd /d "%~dp0"
 echo.
 pause

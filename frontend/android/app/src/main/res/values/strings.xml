@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SocialSaver</string>
+    <string name="title_activity_main">SocialSaver</string>
+    <string name="package_name">com.socialsaver.app</string>
+    <string name="custom_url_scheme">com.socialsaver.app</string>
+</resources>
